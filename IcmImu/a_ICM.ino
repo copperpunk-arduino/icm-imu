@@ -1,4 +1,4 @@
-void IcmSetup()
+void icmSetup()
 {
   Wire.begin();
   Wire.setClock(400000);
@@ -29,10 +29,8 @@ void IcmSetup()
   rc = inv_icm20948_enable_sensor(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_GYROSCOPE), 1);
   rc = inv_icm20948_enable_sensor(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_ACCELEROMETER), 1);
   rc = inv_icm20948_enable_sensor(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_GAME_ROTATION_VECTOR), 1);
-  rc = inv_icm20948_set_sensor_period(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_GAME_ROTATION_VECTOR), 20);
+  rc = inv_icm20948_set_sensor_period(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_GAME_ROTATION_VECTOR), kImuIntervalMs);
   rc = inv_icm20948_set_sensor_period(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_GYROSCOPE), 5);
-  rc = inv_icm20948_set_sensor_period(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_ACCELEROMETER), 5);
-  //  rc = inv_icm20948_enable_sensor(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_RAW_MAGNETOMETER), 1);
 }
 
 
@@ -57,57 +55,33 @@ void build_sensor_event_data(void *context, enum inv_icm20948_sensor sensortype,
   memset((void *)&event, 0, sizeof(event));
   event.sensor = sensor_id;
   event.timestamp = timestamp;
-  float q0, q1, q2, q3, roll, pitch, yaw;
-  //  DebugPrintln(sensor_id);
   switch (sensor_id)
   {
     case INV_SENSOR_TYPE_GYROSCOPE:
       memcpy(event.data.gyr.vect, data, sizeof(event.data.gyr.vect));
       memcpy(&(event.data.gyr.accuracy_flag), arg, sizeof(event.data.gyr.accuracy_flag));
-      gyro_float_[0] = event.data.gyr.vect[0]*DEG2RAD;
-      gyro_float_[1] = -event.data.gyr.vect[1]*DEG2RAD;
-      gyro_float_[2] = -event.data.gyr.vect[2]*DEG2RAD;
+      gyro_rad_[0] = event.data.gyr.vect[0]*kDeg2Rad;
+      gyro_rad_[1] = -event.data.gyr.vect[1]*kDeg2Rad;
+      gyro_rad_[2] = -event.data.gyr.vect[2]*kDeg2Rad;
 //      printGyroFloat();
-      //      sprintf(eamessage, "Gyro: [%f,%f,%f]", event.data.gyr.vect[0], event.data.gyr.vect[1], event.data.gyr.vect[2]);
-      //      DebugPrint("gyro: ");
-      //      DebugPrintln(event.data.gyr.vect[0]);
-
-      break;
-    case INV_SENSOR_TYPE_ACCELEROMETER:
-      memcpy(event.data.acc.vect, data, sizeof(event.data.acc.vect));
-      memcpy(&(event.data.acc.accuracy_flag), arg, sizeof(event.data.acc.accuracy_flag));
-      accel_body_[0] = -event.data.acc.vect[0]*GRAVITY;
-      accel_body_[1] = event.data.acc.vect[1]*GRAVITY;
-      accel_body_[2] = event.data.acc.vect[2]*GRAVITY;
-//      printAccelBody();
-      //      sprintf(eamessage, "Accel: [%f,%f,%f]", event.data.acc.vect[0], event.data.acc.vect[0], event.data.acc.vect[0]);
-      //      DebugPrintln(eamessage);
-
       break;
     case INV_SENSOR_TYPE_GAME_ROTATION_VECTOR:
       memcpy(event.data.quaternion.quat, data, sizeof(event.data.quaternion.quat));
       event.data.quaternion.accuracy_flag = icm20948_get_grv_accuracy();
-      //    sprintf(eamessage, "Quaternion: (%f,%f,%f,%f)", event.data.quaternion.quat[0], event.data.quaternion.quat[1], event.data.quaternion.quat[2], event.data.quaternion.quat[3]);
-      //      DebugPrintln(millis() / 1000.0, 3);
       quat_[0] = event.data.quaternion.quat[0];
       quat_[1] = event.data.quaternion.quat[1];
       quat_[2] = -event.data.quaternion.quat[2];
       quat_[3] = -event.data.quaternion.quat[3];
       new_icm_data_ = true;
-
-      //      DebugPrintln(String(millis()/1000.0,3) + ": " + String(roll * RAD2DEG, 1) + "/" + String(pitch * RAD2DEG, 1) + "/" + String(yaw * RAD2DEG, 1));
-      //          DebugPrintln(eamessage);
       break;
     default:
       return;
   }
 }
 
-void PollIcm()
+void pollIcm()
 {
-  //  DebugPrint("poll: ");
-  int rc = inv_icm20948_poll_sensor(&icm_device_, (void *)0, build_sensor_event_data);
-  //  DebugPrintln(rc);
+  inv_icm20948_poll_sensor(&icm_device_, (void *)0, build_sensor_event_data);
 }
 
 /*
@@ -128,15 +102,9 @@ int i2c_master_write_register(uint8_t address, uint8_t reg, uint32_t len, const 
   if (address != 0x69)
   {
 
-    DebugPrint("Odd address:");
-    DebugPrintln(address);
+    debugPrint("Odd address:");
+    debugPrintln(address);
   }
-  //DebugPrint("write address ");
-  //DebugPrintln(address);
-  //DebugPrint("register ");
-  //DebugPrintln(reg);
-  //DebugPrint("length = ");
-  //DebugPrintln(len);
   Wire.beginTransmission(address);
   Wire.write(reg);
   Wire.write(data, len);
@@ -149,25 +117,15 @@ int i2c_master_read_register(uint8_t address, uint8_t reg, uint32_t len, uint8_t
   if (address != 0x69)
   {
 
-    DebugPrint("Odd read address:");
-    DebugPrintln(address);
+    debugPrint("Odd read address:");
+    debugPrintln(address);
   }
-  //DebugPrint("read address ");
-  //DebugPrintln(address);
-  //DebugPrint("register ");
-  //DebugPrintln(reg);
-  //DebugPrint("length = ");
-  //DebugPrintln(len);
-
   Wire.beginTransmission(address);
   Wire.write(reg);
   Wire.endTransmission(false); // Send repeated start
 
   uint32_t offset = 0;
   uint32_t num_received = Wire.requestFrom(address, len);
-  //DebugPrint("received = ");
-  //DebugPrintln(num_received);
-  //DebugPrintln(buff[0]);
   if (num_received == len)
   {
     for (uint8_t i = 0; i < len; i++)
@@ -231,23 +189,23 @@ int icm20948_sensor_setup(void)
     Just get the whoami
   */
   rc = inv_icm20948_get_whoami(&icm_device_, &whoami);
-  DebugPrint("whoami = ");
-  DebugPrintln(whoami);
+  debugPrint("whoami = ");
+  debugPrintln(whoami);
 
   //delay(1000);
 
   /* Setup accel and gyro mounting matrix and associated angle for current board */
   inv_icm20948_init_matrix(&icm_device_);
 
-  DebugPrint("dmp image size = ");
-  DebugPrintln(sizeof(dmp3_image));
+  debugPrint("dmp image size = ");
+  debugPrintln(sizeof(dmp3_image));
   rc = inv_icm20948_initialize(&icm_device_, dmp3_image, sizeof(dmp3_image));
   while (rc != 0)
   {
     delay(500);
     rc = inv_icm20948_initialize(&icm_device_, dmp3_image, sizeof(dmp3_image));
-    DebugPrint("init got ");
-    DebugPrintln(rc);
+    debugPrint("init got ");
+    debugPrintln(rc);
     //  INV_MSG(INV_MSG_LEVEL_ERROR, "Initialization failed. Error loading DMP3...");
     //    return rc;
 
