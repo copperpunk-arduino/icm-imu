@@ -10,13 +10,9 @@
 #define DEBUG
 #ifdef DEBUG
 #define debugPrint(x) debug_port_.print(x)
-#define debugPrintDec(x) debug_port_.print(x, DEC)
-#define debugPrintHex(x) debug_port_.print(x, HEX)
 #define debugPrintln(x) debug_port_.println(x)
 #else
 #define debugPrint(x)
-#define debugPrintDec(x)
-#define debugPrintHex(x)
 #define debugPrintln(x)
 #endif
 
@@ -25,7 +21,7 @@
 const float kDeg2Rad = 0.017453293f;
 const float kRad2Deg = 57.295779513f;
 
-// ICM Definitions
+// ------------------- ICM-20948 Definitions -------------------
 int rc = 0;
 #define THREE_AXES 3
 static int unscaled_bias[THREE_AXES * 2];
@@ -78,8 +74,10 @@ static uint8_t convert_to_generic_ids[INV_ICM20948_SENSOR_MAX] = {
 #define AD0_VAL   1     // The value of the last bit of the I2C address.
 uint8_t I2C_Address = 0x69;
 inv_icm20948_t icm_device_;
-bool new_icm_data_ = false;
+// ---------------------------------------------------------
 
+// ------------ IMU Definitions ------------
+bool new_icm_data_ = false;
 float gyro_rad_[3];
 float quat_[4];
 
@@ -106,12 +104,12 @@ void setup()
   debug_port_.begin(115200);
 #endif
   output_port.begin(115200);
-  
+
   //------------- ICM Setup --------------
   debugPrintln("ICM Setup...");
   icmSetup();
   debugPrintln("Done!");
-  // ----------- Publish Setup --------------
+  // ----------- Publish VN Setup --------------
   vn_binary1_buffer_[0] = 0xFA;
   vn_binary1_buffer_[1] = 1;
 }
@@ -123,13 +121,13 @@ void loop()
   if (imuTasks())
   {
     main_loop_count_++;
-  }
-  if (main_loop_count_ == kPublishVnBinary1Count)
-  {
-    #ifdef PUBLISH_VN
-    publishVnBinary1();
-    #endif
-    printAttitudeDeg();
-    main_loop_count_ = 0;
+    if (main_loop_count_ == kPublishVnBinary1Count)
+    {
+#ifdef PUBLISH_VN
+      publishVnBinary1();
+#endif
+      printAttitudeDeg();
+      main_loop_count_ = 0;
+    }
   }
 }
