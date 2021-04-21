@@ -2,12 +2,13 @@
 #include <SensorTypes.h>
 #include "Icm20948MPUFifoControl.h"
 #include <Wire.h>
+#include "UbxEuler.h"
 
 // Serial Monitor port
 #define debug_port_ Serial
-#define output_port Serial1
+#define output_port Serial
 
-#define DEBUG
+// #define DEBUG
 #ifdef DEBUG
 #define debugPrint(x) debug_port_.print(x)
 #define debugPrintln(x) debug_port_.println(x)
@@ -17,6 +18,7 @@
 #endif
 
 //#define PUBLISH_VN
+#define PUBLISH_UBX
 
 const float kDeg2Rad = 0.017453293f;
 const float kRad2Deg = 57.295779513f;
@@ -94,6 +96,9 @@ float attitude_rad_[3]; // roll,pitch,yaw
 const int kVnBinary1Length = 30;//108;
 byte vn_binary1_buffer_[kVnBinary1Length];
 
+// Ubx definitions
+UbxEuler ubx_euler_;
+
 // ------------ Loop Definitions ------------
 unsigned int main_loop_count_ = 0;
 
@@ -125,6 +130,9 @@ void loop()
     {
 #ifdef PUBLISH_VN
       publishVnBinary1();
+#endif
+#ifdef PUBLISH_UBX
+publishUbxBinary();
 #endif
       printAttitudeDeg();
       main_loop_count_ = 0;
