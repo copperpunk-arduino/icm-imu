@@ -4,10 +4,10 @@ void icmSetup()
   Wire.setClock(400000);
 
   struct inv_icm20948_serif icm20948_serif;
-  icm20948_serif.context   = 0; /* no need */
-  icm20948_serif.read_reg  = idd_io_hal_read_reg;
+  icm20948_serif.context = 0; /* no need */
+  icm20948_serif.read_reg = idd_io_hal_read_reg;
   icm20948_serif.write_reg = idd_io_hal_write_reg;
-  icm20948_serif.max_read  = 1024 * 16; /* maximum number of bytes allowed per serial read */
+  icm20948_serif.max_read = 1024 * 16;  /* maximum number of bytes allowed per serial read */
   icm20948_serif.max_write = 1024 * 16; /* maximum number of bytes allowed per serial write */
 
   icm20948_serif.is_spi = false;
@@ -25,14 +25,13 @@ void icmSetup()
     inv_icm20948_set_offset(&icm_device_, unscaled_bias);
     icm_device_.offset_done = 1;
   }
-  //enable sensors
+  // enable sensors
   rc = inv_icm20948_enable_sensor(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_GYROSCOPE), 1);
   rc = inv_icm20948_enable_sensor(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_ACCELEROMETER), 1);
   rc = inv_icm20948_enable_sensor(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_GAME_ROTATION_VECTOR), 1);
   rc = inv_icm20948_set_sensor_period(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_GAME_ROTATION_VECTOR), kImuIntervalMs);
-  rc = inv_icm20948_set_sensor_period(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_GYROSCOPE), 5);
+  // rc = inv_icm20948_set_sensor_period(&icm_device_, idd_sensortype_conversion(INV_SENSOR_TYPE_GYROSCOPE), 5);
 }
-
 
 static uint8_t icm20948_get_grv_accuracy(void)
 {
@@ -57,25 +56,25 @@ void build_sensor_event_data(void *context, enum inv_icm20948_sensor sensortype,
   event.timestamp = timestamp;
   switch (sensor_id)
   {
-    case INV_SENSOR_TYPE_GYROSCOPE:
-      memcpy(event.data.gyr.vect, data, sizeof(event.data.gyr.vect));
-      memcpy(&(event.data.gyr.accuracy_flag), arg, sizeof(event.data.gyr.accuracy_flag));
-      gyro_rad_[0] = event.data.gyr.vect[0]*kDeg2Rad;
-      gyro_rad_[1] = -event.data.gyr.vect[1]*kDeg2Rad;
-      gyro_rad_[2] = -event.data.gyr.vect[2]*kDeg2Rad;
-//      printGyroFloat();
-      break;
-    case INV_SENSOR_TYPE_GAME_ROTATION_VECTOR:
-      memcpy(event.data.quaternion.quat, data, sizeof(event.data.quaternion.quat));
-      event.data.quaternion.accuracy_flag = icm20948_get_grv_accuracy();
-      quat_[0] = event.data.quaternion.quat[0];
-      quat_[1] = event.data.quaternion.quat[1];
-      quat_[2] = -event.data.quaternion.quat[2];
-      quat_[3] = -event.data.quaternion.quat[3];
-      new_icm_data_ = true;
-      break;
-    default:
-      return;
+  // case INV_SENSOR_TYPE_GYROSCOPE:
+  // memcpy(event.data.gyr.vect, data, sizeof(event.data.gyr.vect));
+  // memcpy(&(event.data.gyr.accuracy_flag), arg, sizeof(event.data.gyr.accuracy_flag));
+  // gyro_rad_[0] = event.data.gyr.vect[0] * kDeg2Rad;
+  // gyro_rad_[1] = -event.data.gyr.vect[1] * kDeg2Rad;
+  // gyro_rad_[2] = -event.data.gyr.vect[2] * kDeg2Rad;
+  // //      printGyroFloat();
+  // break;
+  case INV_SENSOR_TYPE_GAME_ROTATION_VECTOR:
+    memcpy(event.data.quaternion.quat, data, sizeof(event.data.quaternion.quat));
+    event.data.quaternion.accuracy_flag = icm20948_get_grv_accuracy();
+    _quat[0] = event.data.quaternion.quat[0];
+    _quat[1] = event.data.quaternion.quat[1];
+    _quat[2] = -event.data.quaternion.quat[2];
+    _quat[3] = -event.data.quaternion.quat[3];
+    _new_icm_data = true;
+    break;
+  default:
+    return;
   }
 }
 
@@ -140,8 +139,6 @@ int i2c_master_read_register(uint8_t address, uint8_t reg, uint32_t len, uint8_t
   }
 }
 
-
-
 //---------------------------------------------------------------------
 int idd_io_hal_read_reg(void *context, uint8_t reg, uint8_t *rbuffer, uint32_t rlen)
 {
@@ -176,9 +173,7 @@ static void icm20948_set_fsr(void)
   inv_icm20948_set_fsr(&icm_device_, INV_ICM20948_SENSOR_GYROSCOPE_UNCALIBRATED, (const void *)&cfg_gyr_fsr);
 }
 
-
 //--------------------------------------------------------------------
-
 
 int icm20948_sensor_setup(void)
 {
@@ -192,7 +187,7 @@ int icm20948_sensor_setup(void)
   debugPrint("whoami = ");
   debugPrintln(whoami);
 
-  //delay(1000);
+  // delay(1000);
 
   /* Setup accel and gyro mounting matrix and associated angle for current board */
   inv_icm20948_init_matrix(&icm_device_);
@@ -208,7 +203,6 @@ int icm20948_sensor_setup(void)
     debugPrintln(rc);
     //  INV_MSG(INV_MSG_LEVEL_ERROR, "Initialization failed. Error loading DMP3...");
     //    return rc;
-
   }
 
   icm20948_apply_mounting_matrix();
@@ -218,13 +212,13 @@ int icm20948_sensor_setup(void)
   /* re-initialize base state structure */
   inv_icm20948_init_structure(&icm_device_);
   return 0;
-} //sensor_setup
+} // sensor_setup
 
 //---------------------------------------------------------------------
 
 uint64_t inv_icm20948_get_time_us(void)
 {
-  return millis(); //InvEMDFrontEnd_getTimestampUs();
+  return millis(); // InvEMDFrontEnd_getTimestampUs();
 }
 
 //---------------------------------------------------------------------
@@ -233,47 +227,47 @@ static enum inv_icm20948_sensor idd_sensortype_conversion(int sensor)
 {
   switch (sensor)
   {
-    case INV_SENSOR_TYPE_RAW_ACCELEROMETER:
-          return INV_ICM20948_SENSOR_RAW_ACCELEROMETER;
-      case INV_SENSOR_TYPE_RAW_GYROSCOPE:
-        return INV_ICM20948_SENSOR_RAW_GYROSCOPE;
-      case INV_SENSOR_TYPE_ACCELEROMETER:
-        return INV_ICM20948_SENSOR_ACCELEROMETER;
-      case INV_SENSOR_TYPE_GYROSCOPE:
-        return INV_ICM20948_SENSOR_GYROSCOPE;
-      case INV_SENSOR_TYPE_UNCAL_MAGNETOMETER:
-        return INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED;
-      case INV_SENSOR_TYPE_UNCAL_GYROSCOPE:
-        return INV_ICM20948_SENSOR_GYROSCOPE_UNCALIBRATED;
-      case INV_SENSOR_TYPE_BAC:
-        return INV_ICM20948_SENSOR_ACTIVITY_CLASSIFICATON;
-      case INV_SENSOR_TYPE_STEP_DETECTOR:
-        return INV_ICM20948_SENSOR_STEP_DETECTOR;
-      case INV_SENSOR_TYPE_STEP_COUNTER:
-        return INV_ICM20948_SENSOR_STEP_COUNTER;
-      case INV_SENSOR_TYPE_GAME_ROTATION_VECTOR:
-        return INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR;
-      case INV_SENSOR_TYPE_ROTATION_VECTOR:
-        return INV_ICM20948_SENSOR_ROTATION_VECTOR;
-      case INV_SENSOR_TYPE_GEOMAG_ROTATION_VECTOR:
-        return INV_ICM20948_SENSOR_GEOMAGNETIC_ROTATION_VECTOR;
-      case INV_SENSOR_TYPE_MAGNETOMETER:
-        return INV_ICM20948_SENSOR_GEOMAGNETIC_FIELD;
-      case INV_SENSOR_TYPE_SMD:
-        return INV_ICM20948_SENSOR_WAKEUP_SIGNIFICANT_MOTION;
-      case INV_SENSOR_TYPE_PICK_UP_GESTURE:
-        return INV_ICM20948_SENSOR_FLIP_PICKUP;
-      case INV_SENSOR_TYPE_TILT_DETECTOR:
-        return INV_ICM20948_SENSOR_WAKEUP_TILT_DETECTOR;
-      case INV_SENSOR_TYPE_GRAVITY:
-        return INV_ICM20948_SENSOR_GRAVITY;
-      case INV_SENSOR_TYPE_LINEAR_ACCELERATION:
-        return INV_ICM20948_SENSOR_LINEAR_ACCELERATION;
-      case INV_SENSOR_TYPE_ORIENTATION:
-        return INV_ICM20948_SENSOR_ORIENTATION;
-      case INV_SENSOR_TYPE_B2S:
-        return INV_ICM20948_SENSOR_B2S;
-      default:
-        return INV_ICM20948_SENSOR_MAX;
-    }//switch
-  }//enum sensortyp_conversion
+  case INV_SENSOR_TYPE_RAW_ACCELEROMETER:
+    return INV_ICM20948_SENSOR_RAW_ACCELEROMETER;
+  case INV_SENSOR_TYPE_RAW_GYROSCOPE:
+    return INV_ICM20948_SENSOR_RAW_GYROSCOPE;
+  case INV_SENSOR_TYPE_ACCELEROMETER:
+    return INV_ICM20948_SENSOR_ACCELEROMETER;
+  case INV_SENSOR_TYPE_GYROSCOPE:
+    return INV_ICM20948_SENSOR_GYROSCOPE;
+  case INV_SENSOR_TYPE_UNCAL_MAGNETOMETER:
+    return INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED;
+  case INV_SENSOR_TYPE_UNCAL_GYROSCOPE:
+    return INV_ICM20948_SENSOR_GYROSCOPE_UNCALIBRATED;
+  case INV_SENSOR_TYPE_BAC:
+    return INV_ICM20948_SENSOR_ACTIVITY_CLASSIFICATON;
+  case INV_SENSOR_TYPE_STEP_DETECTOR:
+    return INV_ICM20948_SENSOR_STEP_DETECTOR;
+  case INV_SENSOR_TYPE_STEP_COUNTER:
+    return INV_ICM20948_SENSOR_STEP_COUNTER;
+  case INV_SENSOR_TYPE_GAME_ROTATION_VECTOR:
+    return INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR;
+  case INV_SENSOR_TYPE_ROTATION_VECTOR:
+    return INV_ICM20948_SENSOR_ROTATION_VECTOR;
+  case INV_SENSOR_TYPE_GEOMAG_ROTATION_VECTOR:
+    return INV_ICM20948_SENSOR_GEOMAGNETIC_ROTATION_VECTOR;
+  case INV_SENSOR_TYPE_MAGNETOMETER:
+    return INV_ICM20948_SENSOR_GEOMAGNETIC_FIELD;
+  case INV_SENSOR_TYPE_SMD:
+    return INV_ICM20948_SENSOR_WAKEUP_SIGNIFICANT_MOTION;
+  case INV_SENSOR_TYPE_PICK_UP_GESTURE:
+    return INV_ICM20948_SENSOR_FLIP_PICKUP;
+  case INV_SENSOR_TYPE_TILT_DETECTOR:
+    return INV_ICM20948_SENSOR_WAKEUP_TILT_DETECTOR;
+  case INV_SENSOR_TYPE_GRAVITY:
+    return INV_ICM20948_SENSOR_GRAVITY;
+  case INV_SENSOR_TYPE_LINEAR_ACCELERATION:
+    return INV_ICM20948_SENSOR_LINEAR_ACCELERATION;
+  case INV_SENSOR_TYPE_ORIENTATION:
+    return INV_ICM20948_SENSOR_ORIENTATION;
+  case INV_SENSOR_TYPE_B2S:
+    return INV_ICM20948_SENSOR_B2S;
+  default:
+    return INV_ICM20948_SENSOR_MAX;
+  } // switch
+} // enum sensortyp_conversion

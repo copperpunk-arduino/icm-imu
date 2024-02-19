@@ -1,10 +1,9 @@
-boolean imuTasks() {
-  if (new_icm_data_) {
-    new_icm_data_ = false;
+boolean checkForData()
+{
+  if (_new_icm_data)
+  {
+    _new_icm_data = false;
     convertQuatToEuler();
-//    printAttitude();
-//    printQuat();
-    //    printGyroFloat();
     return true;
   }
   //  }
@@ -14,7 +13,14 @@ boolean imuTasks() {
 
 void convertQuatToEuler()
 {
-  attitude_rad_[0] = atan2(2.0 * (quat_[0] * quat_[1] + quat_[2] * quat_[3]), (1.0 - 2.0 * (quat_[1] * quat_[1] + quat_[2] * quat_[2])));
-  attitude_rad_[1] = asin(2 * (quat_[0] * quat_[2] - quat_[3] * quat_[1]));
-  attitude_rad_[2] = atan2(2.0 * (quat_[0] * quat_[3] + quat_[1] * quat_[2]), (1.0 - 2.0 * (quat_[2] * quat_[2] + quat_[3] * quat_[3])));
+  _attitude_rad[0] = atan2(2.0 * (_quat[0] * _quat[1] + _quat[2] * _quat[3]), (1.0 - 2.0 * (_quat[1] * _quat[1] + _quat[2] * _quat[2])));
+  _attitude_rad[1] = asin(2 * (_quat[0] * _quat[2] - _quat[3] * _quat[1]));
+  _attitude_rad[2] = atan2(2.0 * (_quat[0] * _quat[3] + _quat[1] * _quat[2]), (1.0 - 2.0 * (_quat[2] * _quat[2] + _quat[3] * _quat[3])));
+}
+
+void sendRollMessage()
+{
+  _drv_interpreter.packValue(_attitude_rad[0], 0);
+  _drv_interpreter.prepareMessage();
+  _drv_interpreter.writeMessage(&output_port);
 }
