@@ -3,6 +3,7 @@
 #include "Icm20948MPUFifoControl.h"
 #include <Wire.h>
 #include <DrvInterpreter.h>
+#include <DigitalButton.h>
 
 // Serial Monitor port
 #define debug_port_ Serial
@@ -32,16 +33,16 @@ static const uint8_t dmp3_image[] =
 #include "icm20948_img.dmp3a.h"
 };
 
-static const float cfg_mounting_matrix[9] = {
-    1.f, 0, 0,
-    0, 1.f, 0,
-    0, 0, 1.f};
+// static const float cfg_mounting_matrix[9] = {
+//     1.f, 0, 0,
+//     0, 1.f, 0,
+//     0, 0, 1.f};
 
 // For 90 pitch rotation
-// static const float cfg_mounting_matrix[9] = {
-//     0, 0, 1,
-//     0, 1, 0,
-//     -1, 0, 0};
+static const float cfg_mounting_matrix[9] = {
+    0, 0, 1,
+    0, 1, 0,
+    -1, 0, 0};
 
 static uint8_t convert_to_generic_ids[INV_ICM20948_SENSOR_MAX] = {
     INV_SENSOR_TYPE_ACCELEROMETER,
@@ -80,6 +81,12 @@ float _quat[4];
 const unsigned int kImuIntervalMs = 20;
 float _attitude_rad[3];
 
+// -------------------------------------------
+const int kAlignHeadsetButtonPin = MISO;
+const int kActionButtonPin = MOSI;
+DigitalButton _action_button(kActionButtonPin, 3, true);
+DigitalButton _align_headset_button(kAlignHeadsetButtonPin, 3, true);
+
 DrvInterpreter _drv_interpreter;
 
 void setup()
@@ -93,7 +100,8 @@ void setup()
   debugPrintln("ICM Setup...");
   icmSetup();
   debugPrintln("Done!");
-  _drv_interpreter.setHeaderValues(DrvMessageId::kPilotSteeringAngle, DrvMessageLength::kPilotSteeringAngle);
+  pinMode(kActionButtonPin, INPUT_PULLUP);
+  pinMode(kAlignHeadsetButtonPin, INPUT_PULLUP);
 }
 
 void loop()
@@ -101,7 +109,18 @@ void loop()
   pollIcm();
   if (checkForData())
   {
-    printAttitudeDeg();
+    // printAttitudeDeg();
+    // printTime();
     sendRollMessage();
+    if (_align_headset_button.checkPressed())
+    {
+      debugPrintln("Align Headset");
+      sendAlignHeadsetMessage();
+    }
+    if (_action_button.checkPressed())
+    {
+      debugPrintln("Action Button");
+      sendActionButtonMessage();
+    }
   }
 }

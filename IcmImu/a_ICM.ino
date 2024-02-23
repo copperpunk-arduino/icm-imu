@@ -52,29 +52,17 @@ void build_sensor_event_data(void *context, enum inv_icm20948_sensor sensortype,
   uint8_t sensor_id = convert_to_generic_ids[sensortype];
 
   memset((void *)&event, 0, sizeof(event));
-  event.sensor = sensor_id;
-  event.timestamp = timestamp;
-  switch (sensor_id)
+  // event.sensor = sensor_id;
+  // event.timestamp = timestamp;
+  if (sensor_id == INV_SENSOR_TYPE_GAME_ROTATION_VECTOR)
   {
-  // case INV_SENSOR_TYPE_GYROSCOPE:
-  // memcpy(event.data.gyr.vect, data, sizeof(event.data.gyr.vect));
-  // memcpy(&(event.data.gyr.accuracy_flag), arg, sizeof(event.data.gyr.accuracy_flag));
-  // gyro_rad_[0] = event.data.gyr.vect[0] * kDeg2Rad;
-  // gyro_rad_[1] = -event.data.gyr.vect[1] * kDeg2Rad;
-  // gyro_rad_[2] = -event.data.gyr.vect[2] * kDeg2Rad;
-  // //      printGyroFloat();
-  // break;
-  case INV_SENSOR_TYPE_GAME_ROTATION_VECTOR:
     memcpy(event.data.quaternion.quat, data, sizeof(event.data.quaternion.quat));
-    event.data.quaternion.accuracy_flag = icm20948_get_grv_accuracy();
+    // event.data.quaternion.accuracy_flag = icm20948_get_grv_accuracy();
     _quat[0] = event.data.quaternion.quat[0];
     _quat[1] = event.data.quaternion.quat[1];
     _quat[2] = -event.data.quaternion.quat[2];
     _quat[3] = -event.data.quaternion.quat[3];
     _new_icm_data = true;
-    break;
-  default:
-    return;
   }
 }
 

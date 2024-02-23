@@ -5,5 +5,7 @@ void printTime()
 
 void printAttitudeDeg()
 {
-  debugPrintln("R/P/Y: " + String(_attitude_rad[0] * kRad2Deg) + ", " + String(_attitude_rad[1] * kRad2Deg) + ", " + String(_attitude_rad[2] * kRad2Deg));
+  debugPrint(F("["));
+  debugPrint(millis());
+  debugPrintln("] R/P/Y: " + String(_attitude_rad[0] * kRad2Deg) + ", " + String(_attitude_rad[1] * kRad2Deg) + ", " + String(_attitude_rad[2] * kRad2Deg));
 }
