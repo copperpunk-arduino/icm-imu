@@ -111,16 +111,6 @@ void loop()
   {
     // printAttitudeDeg();
     // printTime();
-    sendRollMessage();
-    if (_align_headset_button.checkPressed())
-    {
-      debugPrintln("Align Headset");
-      sendAlignHeadsetMessage();
+    sendSteeringWheelMessage();
     }
-    if (_action_button.checkPressed())
-    {
-      debugPrintln("Action Button");
-      sendActionButtonMessage();
-    }
-  }
 }
