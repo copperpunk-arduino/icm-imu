@@ -6,17 +6,28 @@
 #include <DigitalButton.h>
 
 // Serial Monitor port
-#define debug_port_ Serial
+#define debug_port Serial
 #define output_port Serial1
 
 #define DEBUG
 #ifdef DEBUG
-#define debugPrint(x) debug_port_.print(x)
-#define debugPrintln(x) debug_port_.println(x)
+#define debugPrint(x) debug_port.print(x)
+#define debugPrintDec(x, y) debug_port.print(x, y)
+#define debugPrintHex(x) debug_port.print(x, HEX)
+#define debugPrintln(x) debug_port.println(x)
+#define debugPrintlnDec(x, y) debug_port.println(x, y)
+#define debugPrintlnHex(x) debug_port.println(x, HEX)
+
 #else
 #define debugPrint(x)
+#define debugPrintDec(x, y)
+#define debugPrintHex(x)
 #define debugPrintln(x)
+#define debugPrintlnDec(x, y)
+#define debugPrintlnHex(x)
 #endif
+
+#define ANALOG_READ_MAX_COUNTS 1023
 
 const float kDeg2Rad = 0.017453293f;
 const float kRad2Deg = 57.295779513f;
@@ -75,11 +86,22 @@ static uint8_t convert_to_generic_ids[INV_ICM20948_SENSOR_MAX] = {
 uint8_t I2C_Address = 0x69;
 inv_icm20948_t icm_device_;
 // ---------------------------------------------------------
+// Pedals
+const int kAccelPedalPin = A2;
+const int kBrakePedalPin = A1;
+// Accel Analog Ouput
+const float kPedalVoltageMaxV = 4;
+const float kPedalVoltageMinV = 1;
 
 bool _new_icm_data = false;
 float _quat[4];
-const unsigned int kImuIntervalMs = 20;
+const unsigned int kImuIntervalMs = 10;
 float _attitude_rad[3];
+
+float _pilot_accel_scaled, _pilot_brake_scaled, _pilot_steering_angle_deg;
+float _max_accel_scaled = 1.0f;
+const float kDeltaMaxAccelScaled = 0.1f;
+const float kMaxSteeringAngleDeg = 90;
 
 // -------------------------------------------
 const int kAlignHeadsetButtonPin = MISO;
@@ -93,7 +115,7 @@ void setup()
 {
   //------------- Serial Port Setup -----------------
 #ifdef DEBUG
-  debug_port_.begin(115200);
+  debug_port.begin(115200);
 #endif
   output_port.begin(115200);
 
@@ -102,6 +124,9 @@ void setup()
   debugPrintln("Done!");
   pinMode(kActionButtonPin, INPUT_PULLUP);
   pinMode(kAlignHeadsetButtonPin, INPUT_PULLUP);
+
+  _pilot_accel_scaled = 0;
+  _pilot_brake_scaled = 0;
 }
 
 void loop()
@@ -111,6 +136,7 @@ void loop()
   {
     // printAttitudeDeg();
     // printTime();
-    sendSteeringWheelMessage();
-    }
+    getPedalInput();
+    sendPilotCommands();
+  }
 }
